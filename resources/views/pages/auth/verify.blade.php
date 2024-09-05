@@ -67,7 +67,7 @@ new class extends Component
                 <button onclick="event.preventDefault(); document.getElementById('logout-form').submit();" class="text-gray-500 underline cursor-pointer dark:text-gray-400 dark:hover:text-gray-300 hover:text-gray-800">
                   {{config('devdojo.auth.language.verify.logout')}}
                 </button>
-                <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+                <form id="logout-form" action="{{ route('logout.post') }}" method="POST" style="display: none;">
                     @csrf
                 </form>
             </div>
