@@ -14,7 +14,7 @@ Route::redirect('register', 'auth/register')->name('register');
 Route::middleware(['auth', 'web'])->group(function () {
 
     Route::post('/auth/logout', LogoutController::class)
-        ->name('logout');
+        ->name('logout.post');
 
     Route::get('/auth/verify-email/{id}/{hash}', VerifyEmailController::class)
         ->middleware(['signed', 'throttle:6,1'])
