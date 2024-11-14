@@ -22,6 +22,9 @@ new class extends Component
     #[Validate('required')]
     public $password = '';
 
+    #[Validate('bool')]
+    public $rememberMe = false;
+
     public $showPasswordField = false;
 
     public $showIdentifierInput = true;
@@ -46,7 +49,7 @@ new class extends Component
             $this->showPasswordField = false;
             return;
         }
-        
+
         $this->showIdentifierInput = true;
         $this->showSocialProviderInfo = false;
     }
@@ -69,6 +72,14 @@ new class extends Component
                     return;
                 }
             }
+
+            // Check if account exists before login and handle error if user is not found
+            if(config('devdojo.auth.settings.check_account_exists_before_login') && is_null($userTryingToValidate)){
+                $this->js("setTimeout(function(){ window.dispatchEvent(new CustomEvent('focus-email', {})); }, 10);");
+                $this->addError('email', trans(config('devdojo.auth.language.login.couldnt_find_your_account')));
+                return;
+            }
+
             $this->showPasswordField = true;
             $this->js("setTimeout(function(){ window.dispatchEvent(new CustomEvent('focus-password', {})); }, 10);");
             return;
@@ -100,11 +111,11 @@ new class extends Component
             return redirect()->route('auth.two-factor-challenge');
 
         } else {
-            if (!Auth::attempt($credentials)) {
+            if (!Auth::attempt($credentials, $this->rememberMe)) {
                 $this->addError('password', trans('auth.failed'));
                 return;
             }
-            
+
             event(new Login(auth()->guard('web'), $this->userModel->where('email', $this->email)->first(), true));
 
             if(session()->get('url.intended') != route('logout.get')){
@@ -122,7 +133,7 @@ new class extends Component
 ?>
 
 <x-auth::layouts.app title="{{ config('devdojo.auth.language.login.page_title') }}">
-    
+
     @volt('auth.login')
         <x-auth::elements.container>
 
@@ -150,7 +161,7 @@ new class extends Component
                 @endif
 
                 @if($showSocialProviderInfo)
-                    <div class="p-4 text-sm rounded-md border bg-zinc-50 border-zinc-200">
+                    <div class="p-4 text-sm border rounded-md bg-zinc-50 border-zinc-200">
                         <span>{{ str_replace('__social_providers_list__', implode(', ', $userSocialProviders), config('devdojo.auth.language.login.social_auth_authenticated_message')) }}</span>
                         <button wire:click="editIdentity" type="button" class="underline translate-x-0.5">{{ config('devdojo.auth.language.login.change_email') }}</button>
                     </div>
@@ -165,7 +176,8 @@ new class extends Component
 
                 @if($showPasswordField)
                     <x-auth::elements.input :label="config('devdojo.auth.language.login.password')" type="password" wire:model="password" id="password" data-auth="password-input" />
-                    <div class="flex justify-between items-center mt-6 text-sm leading-5">
+					<x-auth::elements.checkbox :label="config('devdojo.auth.language.login.remember_me')" wire:model="rememberMe" id="remember-me" data-auth="remember-me-input" />
+					<div class="flex items-center justify-between mt-6 text-sm leading-5">
                         <x-auth::elements.text-link href="{{ route('auth.password.request') }}" data-auth="forgot-password-link">{{ config('devdojo.auth.language.login.forget_password') }}</x-auth::elements.text-link>
                     </div>
                 @endif
@@ -187,5 +199,5 @@ new class extends Component
 
         </x-auth::elements.container>
     @endvolt
-    
+
 </x-auth::layouts.app>
